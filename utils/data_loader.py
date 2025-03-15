@@ -1,32 +1,60 @@
-import fitz  # PyMuPDF para leer PDF
-import json
 import os
+import json
+import fitz  # PyMuPDF
 
-PDF_PATH = "data/veterinaria.pdf"
-JSON_PATH = "data/respuestas.json"
+# Rutas
+pdf_folder = "pdfs/"
+data_file = "data/data.json"
 
-def extraer_texto_pdf(pdf_path):
-    """Extrae el texto del PDF y lo devuelve como una lista de oraciones."""
+def extract_text_from_pdf(pdf_path):
+    """Extrae el texto del PDF dividiéndolo por títulos y contenido"""
     doc = fitz.open(pdf_path)
-    texto = ""
-    for pagina in doc:
-        texto += pagina.get_text("text") + "\n"
+    data = {}
+    current_title = "Introducción"  # Nombre inicial por defecto
+    content = ""
 
-    oraciones = [oracion.strip() for oracion in texto.split(". ") if len(oracion) > 10]  # Separa en oraciones
-    return oraciones
+    for page in doc:
+        text = page.get_text("text")
+        lines = text.split("\n")
 
-def convertir_pdf_a_json(pdf_path, json_path):
-    """Convierte el texto del PDF en JSON para búsquedas rápidas."""
-    if os.path.exists(json_path):  # Si ya existe, no lo vuelve a generar
-        return
-    
-    oraciones = extraer_texto_pdf(pdf_path)
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(oraciones, f, indent=4, ensure_ascii=False)  # Guarda como JSON
+        for line in lines:
+            line = line.strip()
+            if line.isupper():  # Detectar títulos en MAYÚSCULAS
+                if content:
+                    data[current_title] = content.strip()
+                current_title = line
+                content = ""
+            else:
+                content += line + " "
 
-def cargar_datos_json(json_path):
-    """Carga las respuestas desde el JSON."""
-    if not os.path.exists(json_path):
-        convertir_pdf_a_json(PDF_PATH, JSON_PATH)  # Si no existe, lo crea
-    with open(json_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if content:
+        data[current_title] = content.strip()
+
+    return data
+
+def cargar_datos_pdf():
+    """Carga los PDFs, los extrae y guarda en JSON"""
+    if not os.path.exists(data_file):
+        print("Creando archivo JSON vacío...")
+        data = {}
+    else:
+        with open(data_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith(".pdf")]
+    if pdf_files:
+        print(f"Procesando {len(pdf_files)} PDFs...")
+        for pdf_file in pdf_files:
+            pdf_path = os.path.join(pdf_folder, pdf_file)
+            print(f"🔹 Extrayendo texto de: {pdf_file}")
+            extracted_data = extract_text_from_pdf(pdf_path)
+            data[pdf_file] = extracted_data
+
+        with open(data_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+        print("✅ Datos guardados correctamente en data/data.json")
+    else:
+        print("No se encontraron PDFs en la carpeta.")
+
+    return data
