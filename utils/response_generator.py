@@ -1,9 +1,25 @@
-def generar_respuesta(pregunta, datos):
-    """Busca la respuesta en la base de datos JSON."""
-    pregunta = pregunta.lower()
+import spacy
+from utils.data_loader import cargar_datos_json
 
-    for titulo, contenido in datos.items():
-        if pregunta in contenido.lower():
-            return contenido
+nlp = spacy.load("es_core_news_md")
 
-    return "Lo siento, no encontré información sobre eso en mi base de datos."
+def buscar_respuesta(pregunta, json_path):
+    """Busca la mejor respuesta dentro del JSON."""
+    oraciones = cargar_datos_json(json_path)  # Cargamos el JSON
+    doc_pregunta = nlp(pregunta)
+
+    mejor_respuesta = ""
+    mayor_similitud = 0.0
+
+    for oracion in oraciones:
+        doc_oracion = nlp(oracion)
+        similitud = doc_pregunta.similarity(doc_oracion)  # Comparamos con cada oración
+
+        if similitud > mayor_similitud:
+            mayor_similitud = similitud
+            mejor_respuesta = oracion
+
+    if mayor_similitud > 0.6:  # Si la similitud es aceptable, devolvemos la mejor respuesta
+        return mejor_respuesta
+    else:
+        return "Lo siento, no encontré una respuesta exacta."

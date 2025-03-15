@@ -1,23 +1,24 @@
 from flask import Flask, request, jsonify
-from utils.data_loader import cargar_datos_pdf
-from utils.response_generator import generar_respuesta
+from utils.response_generator import buscar_respuesta
+from utils.data_loader import convertir_pdf_a_json
 
 app = Flask(__name__)
+PDF_PATH = "data/veterinaria.pdf"
+JSON_PATH = "data/respuestas.json"
 
-# Cargar los datos al iniciar
-datos = cargar_datos_pdf()
+# Convertir el PDF a JSON antes de iniciar el bot
+convertir_pdf_a_json(PDF_PATH, JSON_PATH)
 
-@app.route('/')
-def home():
-    return "Bienvenido al chatbot!"
+@app.route("/chatbot", methods=["POST"])
+def chatbot():
+    datos = request.get_json()
+    pregunta = datos.get("pregunta", "").lower()
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    pregunta = request.json.get('pregunta')
-    if pregunta:
-        respuesta = generar_respuesta(pregunta, datos)
-        return jsonify({"respuesta": respuesta})
-    return jsonify({"error": "No se recibió una pregunta."}), 400
+    if not pregunta:
+        return jsonify({"respuesta": "No entendí tu pregunta."})
 
-if __name__ == '__main__':
+    respuesta = buscar_respuesta(pregunta, JSON_PATH)
+    return jsonify({"respuesta": respuesta})
+
+if __name__ == "__main__":
     app.run(debug=True)
