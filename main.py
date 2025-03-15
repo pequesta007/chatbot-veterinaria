@@ -7,12 +7,10 @@ app = Flask(__name__)
 # Cargar los datos al iniciar
 datos = cargar_datos_pdf()
 
-# Ruta para la página principal
 @app.route('/')
 def home():
     return "Bienvenido al chatbot!"
 
-# Ruta para procesar las preguntas del usuario
 @app.route('/chat', methods=['POST'])
 def chat():
     pregunta = request.json.get('pregunta')

@@ -1,12 +1,9 @@
-import json
-
 def generar_respuesta(pregunta, datos):
+    """Busca la respuesta en la base de datos JSON."""
     pregunta = pregunta.lower()
-    
-    # Recorrer cada PDF en el JSON
-    for pdf_nombre, secciones in datos.items():
-        for titulo, contenido in secciones.items():
-            if pregunta in titulo.lower() or pregunta in contenido.lower():
-                return contenido  # Devuelve la sección donde se encontró la respuesta
+
+    for titulo, contenido in datos.items():
+        if pregunta in contenido.lower():
+            return contenido
 
     return "Lo siento, no encontré información sobre eso en mi base de datos."
