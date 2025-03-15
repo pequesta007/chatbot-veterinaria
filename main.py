@@ -4,18 +4,17 @@ from utils.response_generator import generar_respuesta
 
 app = Flask(__name__)
 
-# Cargar los datos al iniciar
+# Cargar los datos del JSON
 datos = cargar_datos_pdf()
 
-# Ruta para la página principal
 @app.route('/')
 def home():
-    return "Bienvenido al chatbot veterinario!"
+    return "Bienvenido al chatbot de la veterinaria."
 
-# Ruta para procesar las preguntas del usuario
 @app.route('/chat', methods=['POST'])
 def chat():
-    pregunta = request.json.get('pregunta')
+    """Procesa la pregunta del usuario y devuelve una respuesta."""
+    pregunta = request.json.get("pregunta")
     if pregunta:
         respuesta = generar_respuesta(pregunta, datos)
         return jsonify({"respuesta": respuesta})
