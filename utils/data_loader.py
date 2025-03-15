@@ -1,59 +1,45 @@
 import os
 import json
-import re
-from PyPDF2 import PdfReader
+import PyPDF2
 
-pdf_folder = 'pdfs/'
-data_file = 'data/data.json'
+def extraer_texto_pdf(pdf_path):
+    """Extrae el texto de un archivo PDF."""
+    texto = ""
+    try:
+        with open(pdf_path, "rb") as pdf_file:
+            reader = PyPDF2.PdfReader(pdf_file)
+            for page in reader.pages:
+                texto += page.extract_text() or ""
+    except Exception as e:
+        print(f"Error al extraer texto del PDF {pdf_path}: {e}")
+    return texto
 
-# 🔹 Función para limpiar el texto
-def clean_text(text):
-    text = re.sub(r'[\x00-\x1F\x7F-\x9F]', ' ', text)  # Elimina caracteres raros
-    text = re.sub(r'\s+', ' ', text).strip()  # Elimina espacios dobles
-    return text
-
-# 🔹 Extraer y organizar texto del PDF
-def extract_text_from_pdf(pdf_path):
-    reader = PdfReader(pdf_path)
-    text = ""
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text + "\n"
-    
-    return clean_text(text)
-
-# 🔹 Guardar en JSON
-def save_data_to_json(data):
-    with open(data_file, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-# 🔹 Procesar PDFs
-def cargar_datos_pdf():
+def cargar_datos_pdf(pdf_folder='pdfs/', data_file='data/data.json'):
+    """Carga textos de archivos PDF y los guarda en un archivo JSON."""
     data = {}
+    if not os.path.exists(pdf_folder):
+        print(f"La carpeta {pdf_folder} no existe.")
+        return data
 
     pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
     if not pdf_files:
-        print("No se encontraron PDFs en la carpeta.")
+        print(f"No se encontraron archivos PDF en la carpeta {pdf_folder}.")
         return data
-
-    print(f"Procesando {len(pdf_files)} PDFs...")
 
     for pdf_file in pdf_files:
         pdf_path = os.path.join(pdf_folder, pdf_file)
-        print(f"🔹 Extrayendo texto de: {pdf_file}")
+        texto = extraer_texto_pdf(pdf_path)
+        if texto:
+            data[pdf_file] = texto
+        else:
+            print(f"No se pudo extraer texto del archivo {pdf_file}.")
 
-        extracted_text = extract_text_from_pdf(pdf_path)
-        sections = extracted_text.split("\n\n")  # 🔹 Separa el contenido en secciones
-        
-        pdf_dict = {}
-        for i in range(0, len(sections) - 1, 2):
-            title = sections[i].strip()
-            content = sections[i+1].strip() if i+1 < len(sections) else ""
-            pdf_dict[title] = content  # 🔹 Guarda como {Título: Contenido}
+    if data:
+        os.makedirs(os.path.dirname(data_file), exist_ok=True)
+        with open(data_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        print(f"Datos guardados en {data_file}.")
+    else:
+        print("No se extrajo texto de ningún PDF.")
 
-        data[pdf_file.replace(".pdf", "")] = pdf_dict  # 🔹 Guarda en el JSON
-    
-    save_data_to_json(data)
-    print(f"✅ Datos guardados correctamente en {data_file}")
     return data
