@@ -1,20 +1,13 @@
-import re
+import json
 
 def generar_respuesta(pregunta, datos):
-    pregunta = pregunta.lower()
-    
-    mejores_coincidencias = []
+    """Busca la mejor respuesta en el contenido extraído del PDF."""
+    if not datos or "contenido" not in datos:
+        return "Lo siento, no tengo información en mi base de datos."
 
-    for pdf, secciones in datos.items():
-        for titulo, contenido in secciones.items():
-            if re.search(r'\b' + re.escape(pregunta) + r'\b', titulo.lower()):
-                return contenido  # Devuelve el contenido de la sección encontrada
-            
-            if re.search(r'\b' + re.escape(pregunta) + r'\b', contenido.lower()):
-                mejores_coincidencias.append((titulo, contenido))
+    contenido = datos["contenido"].lower()
 
-    if mejores_coincidencias:
-        mejor_titulo, mejor_contenido = mejores_coincidencias[0]
-        return f"{mejor_titulo}: {mejor_contenido}"
+    if pregunta.lower() in contenido:
+        return "Sí, tengo información sobre eso. Aquí está lo que encontré: \n" + contenido[:500]  # Resumen
 
     return "Lo siento, no encontré información sobre eso en mi base de datos."

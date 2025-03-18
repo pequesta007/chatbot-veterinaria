@@ -4,27 +4,27 @@ from utils.response_generator import generar_respuesta
 
 app = Flask(__name__)
 
-# Cargar datos al iniciar
-datos = cargar_datos_pdf()
+# Cargar datos desde el PDF
+datos = cargar_datos_pdf("data/MUNI MASCOTAS ATENCIÓN (1).pdf")
 
-@app.route('/')
+@app.route("/")
 def home():
-    return "Bienvenido al chatbot de Muni Mascotas!"
+    return "Chatbot de Veterinaria en ejecución."
 
-@app.route('/chat', methods=['POST'])
+@app.route("/chat", methods=["POST"])
 def chat():
-    pregunta = request.json.get('pregunta')
-    
-    if not pregunta:
-        return jsonify({"error": "No se recibió una pregunta."}), 400
+    try:
+        data = request.get_json()
+        pregunta = data.get("pregunta", "").strip()
 
-    print(f"📩 Pregunta recibida: {pregunta}")
-    
-    respuesta = generar_respuesta(pregunta, datos)
+        if not pregunta:
+            return jsonify({"respuesta": "Por favor, ingresa una pregunta válida."})
 
-    print(f"📤 Respuesta enviada: {respuesta}")
-    
-    return jsonify({"respuesta": respuesta})
+        respuesta = generar_respuesta(pregunta, datos)
+        return jsonify({"respuesta": respuesta})
 
-if __name__ == '__main__':
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
     app.run(debug=True)
