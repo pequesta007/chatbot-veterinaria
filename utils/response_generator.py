@@ -1,22 +1,20 @@
-import json
-
-DATA_FILE = "data/data.json"
-
-def cargar_datos():
-    """Carga los datos del JSON en un diccionario."""
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"⚠ El archivo {DATA_FILE} no existe.")
-        return {}
+import re
 
 def generar_respuesta(pregunta, datos):
-    """Busca la respuesta en el JSON a partir de la pregunta."""
     pregunta = pregunta.lower()
+    
+    mejores_coincidencias = []
 
-    for titulo, contenido in datos.items():
-        if pregunta in contenido.lower():
-            return contenido
+    for pdf, secciones in datos.items():
+        for titulo, contenido in secciones.items():
+            if re.search(r'\b' + re.escape(pregunta) + r'\b', titulo.lower()):
+                return contenido  # Devuelve el contenido de la sección encontrada
+            
+            if re.search(r'\b' + re.escape(pregunta) + r'\b', contenido.lower()):
+                mejores_coincidencias.append((titulo, contenido))
+
+    if mejores_coincidencias:
+        mejor_titulo, mejor_contenido = mejores_coincidencias[0]
+        return f"{mejor_titulo}: {mejor_contenido}"
 
     return "Lo siento, no encontré información sobre eso en mi base de datos."
